@@ -24,7 +24,7 @@ export const APP = {
   /* Email được tự động cấp quyền Quản trị ở lần đăng nhập đầu tiên.
      PHẢI khớp với danh sách isBootstrapAdmin() trong firestore.rules. */
   adminEmails: [
-    // "ten@congty.com"
+    "ahntuan13@gmail.com"
   ],
   /* Cách đăng nhập bật trên Firebase Authentication */
   signIn: { google: true, emailPassword: true },
