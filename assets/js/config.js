@@ -6,12 +6,12 @@
    Firebase Console → Project settings → General → Your apps → Web app → SDK setup (Config).
    Để trống apiKey  ⇒ app chạy CHẾ ĐỘ DEMO (dữ liệu lưu trong trình duyệt, chọn vai trò khi đăng nhập). */
 export const FIREBASE_CONFIG = {
-  apiKey: "",
-  authDomain: "",
-  projectId: "",
-  storageBucket: "",
-  messagingSenderId: "",
-  appId: ""
+  apiKey: "AIzaSyDh0fb4CTy8ytMrIlNYtJg36neIOi8tO3Q",
+  authDomain: "mmv-thietbi.firebaseapp.com",
+  projectId: "mmv-thietbi",
+  storageBucket: "mmv-thietbi.firebasestorage.app",
+  messagingSenderId: "502179696710",
+  appId: "1:502179696710:web:e0e9465af44f49e2f4ba47"
 };
 
 /* 2) Thông tin ứng dụng */
