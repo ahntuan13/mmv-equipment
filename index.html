@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Quản lý Thiết bị MMV</title>
+<meta name="description" content="Quản lý thiết bị nhà máy MMV Đà Nẵng">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%230f4c5c'/%3E%3Ctext x='16' y='21' font-family='Arial' font-weight='700' font-size='12' fill='white' text-anchor='middle'%3EMMV%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/app.css">
+<script>
+  /* Áp theme đã chọn trước khi vẽ trang để tránh nháy màu */
+  try{const t=localStorage.getItem('mmv.theme');if(t)document.documentElement.dataset.theme=t;}catch(e){}
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" defer></script>
+</head>
+<body>
+  <div id="root"><div class="boot">Đang khởi động…</div></div>
+  <div id="overlay"></div>
+  <script type="module" src="assets/js/app.js"></script>
+</body>
+</html>

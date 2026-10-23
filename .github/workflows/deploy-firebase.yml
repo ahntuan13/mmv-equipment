@@ -1,0 +1,28 @@
+# (Tùy chọn) Đăng lên Firebase Hosting + cập nhật Firestore rules. Chạy tay từ tab Actions.
+# Cần secret FIREBASE_SERVICE_ACCOUNT (JSON khóa service account có quyền Firebase Admin)
+# và sửa project id trong .firebaserc.
+name: Deploy Firebase (thủ công)
+
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Phần cần đăng"
+        type: choice
+        options: ["hosting,firestore:rules", "firestore:rules", "hosting"]
+        default: "hosting,firestore:rules"
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Ghi khóa service account
+        run: echo '${{ secrets.FIREBASE_SERVICE_ACCOUNT }}' > "$RUNNER_TEMP/sa.json"
+      - name: Deploy
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: npx --yes firebase-tools@13 deploy --only "${{ inputs.target }}" --non-interactive

@@ -1,0 +1,22 @@
+rules_version = '2';
+// File đính kèm (ảnh thiết bị, tài liệu kỹ thuật…) — dùng khi làm phân hệ Thiết bị.
+// Lưu ý: Cloud Storage cho dự án mới cần gói Blaze. Chưa dùng thì bỏ qua file này.
+service firebase.storage {
+  match /b/{bucket}/o {
+    function activeUser() {
+      return request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin', 'quanly', 'kythuat', 'xem'];
+    }
+    function editor() {
+      return request.auth != null
+        && firestore.get(/databases/(default)/documents/users/$(request.auth.uid)).data.role in ['admin', 'quanly', 'kythuat'];
+    }
+    // files/<module>/<docId>/<tên file>
+    match /files/{module}/{docId}/{fileName} {
+      allow read: if activeUser();
+      allow create, update: if editor() && request.resource.size < 20 * 1024 * 1024;
+      allow delete: if editor();
+    }
+    match /{allPaths=**} { allow read, write: if false; }
+  }
+}

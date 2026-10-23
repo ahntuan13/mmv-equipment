@@ -1,0 +1,91 @@
+rules_version = '2';
+// ============================================================
+// QUẢN LÝ THIẾT BỊ MMV — quy tắc bảo mật Cloud Firestore
+// Khớp với PERMISSIONS trong assets/js/roles.js.
+// Mức: 0 ẩn · 1 xem · 2 thêm/sửa · 3 toàn quyền (gồm xóa)
+// Triển khai: Firebase Console → Firestore → Rules (dán nội dung) hoặc
+//             firebase deploy --only firestore:rules
+// ============================================================
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ---------- Danh tính ----------
+    function signedIn() { return request.auth != null; }
+
+    // Email tự thành Quản trị ở lần đăng nhập đầu. PHẢI khớp APP.adminEmails trong config.js
+    function isBootstrapAdmin() {
+      return signedIn() && request.auth.token.email_verified == true
+        && request.auth.token.email in [
+          // 'ten@congty.com'
+        ];
+    }
+
+    function profilePath() { return /databases/$(database)/documents/users/$(request.auth.uid); }
+    function hasProfile() { return signedIn() && exists(profilePath()); }
+    function roleOf(p) { return p.get('active', true) == true ? p.get('role', 'cho') : 'cho'; }
+    function role() { return hasProfile() ? roleOf(get(profilePath()).data) : 'none'; }
+    function isActive() { return role() in ['admin', 'quanly', 'kythuat', 'xem']; }
+    function isAdmin()  { return role() == 'admin'; }
+
+    // ---------- Ma trận quyền ----------
+    function perms() {
+      return {
+        'dashboard':   {'admin': 3, 'quanly': 1, 'kythuat': 1, 'xem': 1},
+        'equipment':   {'admin': 3, 'quanly': 3, 'kythuat': 2, 'xem': 1},
+        'maintenance': {'admin': 3, 'quanly': 3, 'kythuat': 2, 'xem': 1},
+        'incidents':   {'admin': 3, 'quanly': 3, 'kythuat': 2, 'xem': 1},
+        'spareparts':  {'admin': 3, 'quanly': 3, 'kythuat': 2, 'xem': 1},
+        'reports':     {'admin': 3, 'quanly': 1, 'kythuat': 1, 'xem': 1},
+        'masterdata':  {'admin': 3, 'quanly': 2, 'kythuat': 1, 'xem': 1},
+        'users':       {'admin': 3, 'quanly': 1, 'kythuat': 0, 'xem': 0},
+        'settings':    {'admin': 3, 'quanly': 0, 'kythuat': 0, 'xem': 0},
+        'audit':       {'admin': 3, 'quanly': 1, 'kythuat': 0, 'xem': 0}
+      };
+    }
+    function lvl(m) { return perms()[m].get(role(), 0); }
+    function canRead(m)   { return isActive() && lvl(m) >= 1; }
+    function canWrite(m)  { return isActive() && lvl(m) >= 2; }
+    function canDelete(m) { return isActive() && lvl(m) >= 3; }
+
+    // ---------- Người dùng ----------
+    match /users/{uid} {
+      allow read: if (signedIn() && request.auth.uid == uid) || isActive();
+      // Lần đăng nhập đầu: tự tạo hồ sơ với vai trò "cho" (chờ duyệt), trừ email Quản trị khởi tạo.
+      // Nếu đặt APP.requireApproval = false, thêm 'xem' vào danh sách dưới.
+      allow create: if signedIn() && request.auth.uid == uid
+        && (request.resource.data.role in ['cho'] || (isBootstrapAdmin() && request.resource.data.role == 'admin'));
+      // Tự sửa: chỉ tên, ảnh, thời điểm đăng nhập. Quản trị: sửa tất cả.
+      allow update: if isAdmin()
+        || (signedIn() && request.auth.uid == uid
+            && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name', 'photo', 'lastLogin', 'updatedAt', 'updatedBy']));
+      allow delete: if isAdmin();
+    }
+
+    // ---------- Cài đặt ----------
+    match /settings/{id} {
+      allow read: if isActive();
+      allow write: if canWrite('settings');
+    }
+
+    // ---------- Dữ liệu nền ----------
+    match /locations/{id}   { allow read: if isActive(); allow create, update: if canWrite('masterdata'); allow delete: if canDelete('masterdata'); }
+    match /departments/{id} { allow read: if isActive(); allow create, update: if canWrite('masterdata'); allow delete: if canDelete('masterdata'); }
+    match /categories/{id}  { allow read: if isActive(); allow create, update: if canWrite('masterdata'); allow delete: if canDelete('masterdata'); }
+
+    // ---------- Phân hệ nghiệp vụ (chờ nội dung) ----------
+    match /equipment/{id}   { allow read: if canRead('equipment');   allow create, update: if canWrite('equipment');   allow delete: if canDelete('equipment'); }
+    match /maintenance/{id} { allow read: if canRead('maintenance'); allow create, update: if canWrite('maintenance'); allow delete: if canDelete('maintenance'); }
+    match /incidents/{id}   { allow read: if canRead('incidents');   allow create, update: if canWrite('incidents');   allow delete: if canDelete('incidents'); }
+    match /spareparts/{id}  { allow read: if canRead('spareparts');  allow create, update: if canWrite('spareparts');  allow delete: if canDelete('spareparts'); }
+
+    // ---------- Nhật ký: chỉ thêm, không sửa/xóa ----------
+    match /auditLogs/{id} {
+      allow read: if canRead('audit');
+      allow create: if isActive() && request.resource.data.by == request.auth.token.email;
+      allow update, delete: if false;
+    }
+
+    // Mọi thứ khác: từ chối
+    match /{document=**} { allow read, write: if false; }
+  }
+}
