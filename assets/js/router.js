@@ -23,27 +23,31 @@ export const navigate = key => { location.hash = "#/" + key; };
 export function mountShell() {
   const u = backend.user;
   $("#root").innerHTML = `<div class="app">
-    <aside class="nav" aria-label="Menu chính">
-      <div class="brand"><div class="mark">${esc(APP.short)}</div><div><h1>${esc(APP.name)}</h1><small>${esc(APP.plant)}</small></div></div>
-      <nav class="links" id="navlinks"></nav>
-      <div class="foot">v${esc(APP.version)} · ${backend.mode === "live" ? "Firebase" : "Demo"}</div>
-    </aside>
-    <main>
-      <div class="topbar">
-        <span class="crumb" id="crumb"></span><span class="sp"></span>
-        <span class="mode ${backend.mode === "live" ? "live" : "demo"}" title="${backend.mode === "live" ? "Đang dùng Firebase" : "Dữ liệu lưu trong trình duyệt này"}">${backend.mode === "live" ? "● Trực tuyến" : "Chế độ demo"}</span>
-        <button class="iconbtn" id="themeBtn" aria-label="Đổi giao diện sáng/tối">${icon(isDark() ? "sun" : "moon")}</button>
-        <button class="userchip" id="userBtn" aria-label="Tài khoản">
-          <span class="avatar">${u.photo ? `<img src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">` : esc(initials(u.name))}</span>
-          <div><b>${esc(u.name)}</b><small>${esc(roleLabel(u.role))}</small></div>
-        </button>
-        <button class="iconbtn" id="outBtn" aria-label="Đăng xuất" title="Đăng xuất">${icon("out")}</button>
-      </div>
-      <div id="view"></div>
-    </main></div>`;
+    <header class="hdr">
+      <button class="iconbtn menu-btn" id="menuBtn" aria-label="Mở menu" aria-controls="sidenav" aria-expanded="false">${icon("menu", 18)}</button>
+      <div class="brand"><div class="mark">${esc(APP.short)}</div><div class="t"><h1>${esc(APP.name)}</h1><small>${esc(APP.company)}</small></div></div>
+      <span class="sp"></span>
+      <span class="mode ${backend.mode === "live" ? "live" : "demo"}" title="${backend.mode === "live" ? "Đang dùng Firebase" : "Dữ liệu lưu trong trình duyệt này"}">${backend.mode === "live" ? "● Trực tuyến" : "Chế độ demo"}</span>
+      <button class="iconbtn" id="themeBtn" aria-label="Đổi giao diện sáng/tối">${icon(isDark() ? "sun" : "moon")}</button>
+      <button class="userchip" id="userBtn" aria-label="Tài khoản">
+        <span class="avatar">${u.photo ? `<img src="${esc(u.photo)}" alt="" referrerpolicy="no-referrer">` : esc(initials(u.name))}</span>
+        <div><b>${esc(u.name)}</b><small>${esc(roleLabel(u.role))}</small></div>
+      </button>
+      <button class="iconbtn" id="outBtn" aria-label="Đăng xuất" title="Đăng xuất">${icon("out")}</button>
+    </header>
+    <div class="shell">
+      <aside class="nav" id="sidenav" aria-label="Menu chính">
+        <nav class="links" id="navlinks"></nav>
+        <div class="foot">${esc(APP.plant)}<br>v${esc(APP.version)} · ${backend.mode === "live" ? "Firebase" : "Demo"}</div>
+      </aside>
+      <div class="nav-scrim" id="navScrim"></div>
+      <main><div class="crumb" id="crumb"></div><div id="view"></div></main>
+    </div></div>`;
   $("#themeBtn").onclick = toggleTheme;
   $("#outBtn").onclick = () => backend.signOut();
   $("#userBtn").onclick = () => navigate("profile");
+  $("#menuBtn").onclick = () => setNav(!document.body.classList.contains("nav-open"));
+  $("#navScrim").onclick = () => setNav(false);
   renderNav();
   route();
 }
@@ -61,7 +65,7 @@ function renderNav() {
 
 export function route() {
   if (!$("#view")) return;
-  closeOverlay();
+  closeOverlay(); setNav(false);
   const vis = visible();
   let m = vis.find(x => x.key === current()) || modules.find(x => x.key === current() && x.always);
   if (!m) { m = vis[0]; if (m && current() !== m.key) { history.replaceState(null, "", "#/" + m.key); } }
@@ -70,7 +74,7 @@ export function route() {
   renderNav();
   const view = $("#view");
   if (!m) { view.innerHTML = `<div class="empty">Không có mục nào bạn được phép xem.</div>`; return; }
-  $("#crumb").textContent = `${m.group} / ${m.label}`;
+  $("#crumb").textContent = `${m.group} › ${m.label}`;
   document.title = `${m.label} · ${APP.name} ${APP.short}`;
   const role = backend.user.role, key = m.perm || m.key;
   const ctx = { user: backend.user, role, level: level(role, key), canEdit: can.edit(role, key), canDelete: can.delete(role, key), backend, navigate };
@@ -79,6 +83,13 @@ export function route() {
   catch (e) { console.error(e); view.innerHTML = `<div class="callout bad">Lỗi khi mở ${esc(m.label)}: ${esc(e.message)}</div>`; }
   window.scrollTo(0, 0);
 }
+
+/* ---------- Menu trượt (iPad dọc, điện thoại) ---------- */
+function setNav(open) {
+  document.body.classList.toggle("nav-open", open);
+  $("#menuBtn")?.setAttribute("aria-expanded", open);
+}
+document.addEventListener("keydown", e => { if (e.key === "Escape" && document.body.classList.contains("nav-open")) setNav(false); });
 
 /* ---------- Giao diện sáng/tối ---------- */
 function isDark() {

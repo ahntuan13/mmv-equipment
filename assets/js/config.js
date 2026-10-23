@@ -18,8 +18,8 @@ export const FIREBASE_CONFIG = {
 export const APP = {
   name: "Quản lý Thiết bị",
   short: "MMV",
-  plant: "Nhà máy MMV Đà Nẵng",
-  company: "Taikisha Vietnam Engineering",
+  plant: "Nhà máy MMV · KCN Hòa Khánh, Đà Nẵng",
+  company: "Murata Manufacturing Vietnam",
   version: "0.1.0",
   /* Email được tự động cấp quyền Quản trị ở lần đăng nhập đầu tiên.
      PHẢI khớp với danh sách isBootstrapAdmin() trong firestore.rules. */
